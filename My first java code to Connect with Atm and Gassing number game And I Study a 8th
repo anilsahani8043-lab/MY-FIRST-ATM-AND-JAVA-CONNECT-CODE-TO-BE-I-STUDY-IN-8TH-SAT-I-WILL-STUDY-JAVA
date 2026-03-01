@@ -1,0 +1,146 @@
+import java.util.Scanner;
+import java.util.Random;
+
+// 1. Rangon ke liye ek alag Class (Constants)
+class Colors {
+    public static final String RESET = "\u001B[0m";
+    public static final String RED = "\u001B[31m";
+    public static final String GREEN = "\u001B[32m";
+    public static final String YELLOW = "\u001B[33m";
+    public static final String BLUE = "\u001B[34m";
+    public static final String PURPLE = "\u001B[35m";
+    public static final String CYAN = "\u001B[36m";
+    public static final String BG_BLUE = "\u001B[44m";
+    public static final String BG_CYAN = "\u001B[46m";
+}
+
+interface GameLogic {
+    void startGame();
+    void play();
+    int getPoints();
+}
+
+class Game implements GameLogic { 
+    private int computerchoice;
+    protected int totalPoint = 1000;
+
+    public void startGame() {
+        Random random = new Random();
+        computerchoice = random.nextInt(100);
+    }
+
+    public int getPoints() {
+        return totalPoint;
+    }
+
+    public void play() {
+        Scanner sc = new Scanner(System.in);
+        char choice;
+        do {
+            int guesses = 0;
+            startGame();
+            System.out.println("\n" + Colors.BG_BLUE + " 🎮 GAME SHURU! 0-99 tak guess karein 🎮 " + Colors.RESET);
+
+            while (true) {
+                System.out.print(Colors.YELLOW + "🤔 Guess: " + Colors.RESET);
+                int playerchoice = sc.nextInt();
+                guesses++;
+
+                if (playerchoice < computerchoice) {
+                    System.out.println(Colors.PURPLE + "⬆️ Higher!" + Colors.RESET);
+                } else if (playerchoice > computerchoice) {
+                    System.out.println(Colors.PURPLE + "⬇️ Lower!" + Colors.RESET);
+                } else {
+                    System.out.println(Colors.GREEN + "✨ Jeet Gaye! ✨" + Colors.RESET);
+                    int earned = (100 / guesses);
+                    totalPoint += earned;
+                    System.out.println("🏆 Points: " + earned + " | Total: " + totalPoint);
+                    break; 
+                }
+            }
+            System.out.print(Colors.CYAN + "Phir se khelna hai? (y/n): " + Colors.RESET);
+            choice = sc.next().charAt(0);
+        } while (choice == 'y' || choice == 'Y');
+    }
+}
+
+abstract class Atmlogic extends Game {
+    private int[] pin = { 1111, 2222 };
+    private int[] balance = { 10000, 20000 };
+    protected int loggedInIdx = -1;
+
+    public int getBalance(int index) { return balance[index]; }
+    public void setBalance(int index, int amt) { balance[index] = amt; }
+    public boolean checkPin(int index, int inputPin) { return pin[index] == inputPin; }
+}
+
+class Atm extends Atmlogic {
+    Scanner sc = new Scanner(System.in);
+    String[] history = new String[5]; 
+    int hCount = 0;
+
+    public void addH(String msg) {
+        if (hCount < 5) { history[hCount++] = msg; }
+        else {
+            for (int i = 0; i < 4; i++) history[i] = history[i+1];
+            history[4] = msg;
+        }
+    }
+
+    public boolean startAtm() {
+        System.out.println(Colors.BG_CYAN + " 🏦 WELCOME TO MINI BANK 🏦 " + Colors.RESET);
+        System.out.print("👤 Account Index (0/1): ");
+        int idx = sc.nextInt();
+        
+        for (int i = 1; i <= 3; i++) {
+            System.out.print("🔑 Enter PIN: ");
+            if (checkPin(idx, sc.nextInt())) {
+                this.loggedInIdx = idx;
+                System.out.println(Colors.GREEN + "✅ Login Successful!" + Colors.RESET);
+                return true;
+            }
+            System.out.println(Colors.RED + "❌ Galat PIN! Try: " + (3-i) + Colors.RESET);
+        }
+        return false;
+    }
+
+    public void showBalance() {
+        System.out.println(Colors.GREEN + "💵 Balance: $ " + getBalance(loggedInIdx) + Colors.RESET);
+    }
+
+    public void convertPoints() {
+        System.out.print("Points to convert: ");
+        int amt = sc.nextInt();
+        if(amt <= totalPoint) {
+            totalPoint -= amt;
+            setBalance(loggedInIdx, getBalance(loggedInIdx) + amt);
+            addH("➕ Points: " + amt);
+            System.out.println(Colors.GREEN + "✅ Success!" + Colors.RESET);
+        } else {
+            System.out.println(Colors.RED + "⚠️ Insufficient Points!" + Colors.RESET);
+        }
+    }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        Atm myAtm = new Atm();
+        Scanner input = new Scanner(System.in);
+        if(myAtm.startAtm()) {
+            int choice = 0;
+            while (choice != 6) {
+                System.out.println("\n" + Colors.BLUE + "--- ATM MENU ---" + Colors.RESET);
+                System.out.println("1.Balance 2.Convert 3.Withdraw 4.Game 5.History 6.Exit");
+                System.out.print("Chunno: ");
+                choice = input.nextInt();
+                switch (choice) {
+                    case 1: myAtm.showBalance(); break;
+                    case 2: myAtm.convertPoints(); break;
+                    case 4: myAtm.play(); break;
+                    case 6: System.out.println("Bye!"); break;
+                    default: System.out.println("Processing...");
+                }
+            }
+        }
+    }
+}
